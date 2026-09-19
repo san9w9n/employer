@@ -1,0 +1,15 @@
+{
+  "url": "https://employer-one.vercel.app/",
+  "checkedAt": "2026-09-18T10:29:32.599Z",
+  "mobileScreens": [
+    "오늘",
+    "출석부",
+    "직원",
+    "급여"
+  ],
+  "noHorizontalOverflow": true,
+  "noPageErrors": true,
+  "loginAndLogout": true,
+  "updatedLayout": true,
+  "systemFontAnd15pxBody": true
+}

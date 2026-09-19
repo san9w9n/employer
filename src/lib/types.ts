@@ -1,0 +1,10 @@
+export type Employee = {id:string;name:string;username:string;hireDate:string;payType:'hourly'|'monthly';active:boolean};
+export type Account = {id:string;username:string;name:string;role:'owner'|'employee';employeeId:string|null;passwordHash:string};
+export type Attendance = {id:string;employeeId:string;workDate:string;clockIn:string;clockOut:string|null;deductionMinutes:number;credited:boolean;reason:string;confirmed:boolean};
+export type Wage = {id:string;employeeId:string;amount:number;effectiveDate:string};
+export type Period = {id:string;employeeId:string;startDay:number;effectiveDate:string};
+export type Audit = {id:string;employeeId:string|null;targetId:string;actorId:string;actorName:string;at:string;reason:string;before:unknown;after:unknown};
+export type Session = {id:string;accountId:string;expiresAt:string};
+export type RequestRecord = {id:string;accountId:string;action:string;result:unknown};
+export type Store = {accounts:Account[];employees:Employee[];attendance:Attendance[];wageHistory:Wage[];periodHistory:Period[];audits:Audit[];sessions:Session[];requests:RequestRecord[]};
+export type PublicUser = Omit<Account,'passwordHash'>;

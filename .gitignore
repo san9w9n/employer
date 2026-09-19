@@ -1,0 +1,12 @@
+node_modules/
+.next/
+.env*
+!.env.example
+*.tsbuildinfo
+.local/
+.data/
+.vercel
+supabase/.temp/
+.DS_Store
+.omx/
+docs/screenshots/

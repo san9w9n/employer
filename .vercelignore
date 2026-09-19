@@ -1,0 +1,8 @@
+.env*
+.local/
+.data/
+.omx/
+.git/
+docs/
+tests/
+supabase/

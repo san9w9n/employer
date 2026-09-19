@@ -1,0 +1,8 @@
+import {hashPassword} from './password';
+import {seoulDate} from './domain';
+import type {Store} from './types';
+export function sampleStore():Store {
+ const date=seoulDate();const month=date.slice(0,7);const time=(day:string,hour:string)=>new Date(`${day}T${hour}:00+09:00`).toISOString();
+ const employees=[{id:'emp-1',name:'김민지',username:'employee',hireDate:'2026-01-05',payType:'hourly' as const,active:true},{id:'emp-2',name:'이준호',username:'junho',hireDate:'2026-03-02',payType:'hourly' as const,active:true},{id:'emp-3',name:'박서연',username:'seoyeon',hireDate:'2025-11-01',payType:'monthly' as const,active:true}];
+ return {accounts:[{id:'owner-1',username:'owner',name:'사장님',role:'owner',employeeId:null,passwordHash:hashPassword('demo1234')},...employees.map(e=>({id:`account-${e.id}`,username:e.username,name:e.name,role:'employee' as const,employeeId:e.id,passwordHash:hashPassword('demo1234')}))],employees,wageHistory:employees.filter(e=>e.payType==='hourly').map(e=>({id:`wage-${e.id}`,employeeId:e.id,amount:e.id==='emp-1'?12000:13000,effectiveDate:'2025-01-01'})),periodHistory:employees.map(e=>({id:`period-${e.id}`,employeeId:e.id,startDay:1,effectiveDate:'2025-01-01'})),attendance:employees.flatMap((e,i)=>[1,2,3,5,7].filter(d=>d<Number(date.slice(8))).map(d=>({id:`attendance-${e.id}-${d}`,employeeId:e.id,workDate:`${month}-${String(d).padStart(2,'0')}`,clockIn:time(`${month}-${String(d).padStart(2,'0')}`,'10:00'),clockOut:time(`${month}-${String(d).padStart(2,'0')}`,i===2?'20:00':'22:00'),deductionMinutes:120,credited:d===3,reason:d===3?'브레이크타임 손님 응대':'기본 휴게시간',confirmed:d<5}))),audits:[],sessions:[],requests:[]};
+}

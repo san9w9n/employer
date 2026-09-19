@@ -1,0 +1,10 @@
+{
+  "url": "https://employer-one.vercel.app",
+  "checkedAt": "2026-09-18T10:29:25.029Z",
+  "productionConfig": true,
+  "unauthenticatedBlocked": true,
+  "ownerLogin": true,
+  "secureSession": true,
+  "csrfRejected": true,
+  "logoutInvalidatesSession": true
+}

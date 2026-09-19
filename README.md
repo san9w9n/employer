@@ -69,9 +69,9 @@ ALLOW_SAMPLE_SEED=true node --env-file=.env.local --import tsx scripts/seed.ts
 
 ## Vercel 배포
 
-1. 저장소를 Vercel의 Next.js 프로젝트로 가져옵니다. 빌드 `npm run build`.
+1. 저장소를 Vercel의 Next.js 프로젝트로 가져옵니다. 빌드 `npm run vercel-build` (`vercel.json`에 지정). 읽기 전용 DB 스키마 검사가 통과해야 Next.js 빌드를 진행합니다.
 2. 환경변수 `DATABASE_URL`, `DATABASE_SSL=true`, `DATABASE_SSL_CA`, `APP_ORIGIN=https://실제도메인`을 설정합니다. `DEMO_MODE=false`, `ENABLE_SAMPLE_LOGIN`은 미설정으로 둡니다.
-3. 배포 전 별도 관리 환경에서 마이그레이션과 사장님 계정 생성을 실행합니다. 운영 DB에 샘플을 입력하지 않습니다.
+3. 배포 전 별도 관리 환경에서 마이그레이션을 적용하고 `npm run check:schema`로 확인합니다. 최초 설치 때만 사장님 계정을 생성합니다. 운영 DB에 샘플을 입력하지 않습니다. 누락된 마이그레이션이나 재출근을 막는 옛 제약이 남아 있으면 배포 빌드가 실패합니다.
 4. HTTPS에서 로그인과 출퇴근을 확인합니다. iOS 공유 메뉴의 ‘홈 화면에 추가’ 또는 지원 브라우저 설치 메뉴로 PWA를 설치합니다.
 
 Vercel에서는 파일 샘플 모드를 차단합니다. 2026-09-13 Supabase `employer`(서울)와 Vercel `employer`(함수 서울) 운영 연결을 완료했습니다. 운영 주소는 https://employer-one.vercel.app 입니다. 운영 계정은 별도로 생성했고 샘플 데이터는 넣지 않았습니다. 초기 로그인 정보는 배포·Git에서 제외된 `.local/production-login.txt`에 보관합니다. HTTPS 로그인, 세션, 권한, 로그아웃 검증 결과는 `docs/production-smoke.json`에 있습니다.
@@ -117,3 +117,9 @@ AUDIT_ENGINE=chromium npm run verify:mobile
 기록 수정창에서는 출근 당일/다음 날 퇴근, 미퇴근 설정, 휴게시간 0·30·60·120분, 수정 사유 빠른 선택을 제공합니다. 저장 전 계산시간이 즉시 표시됩니다. 기존 기록의 직원은 변경할 수 없으며, 시간을 수정하지 않으면 기존 초·밀리초도 보존합니다.
 
 로컬 샘플 서버에서 `TEST_ORIGIN=http://localhost:3110 npm run verify:attendance-management`로 확인·취소·실제 삭제·동시 수정 거부·모바일 기록 수정을 검증합니다. Playwright 위치와 브라우저 실행 경로는 기존 검증 스크립트처럼 `PLAYWRIGHT_MODULE`, `CHROMIUM_EXECUTABLE`로 지정할 수 있습니다. 운영 데이터에는 실행하지 않습니다.
+
+## 재출근 회귀 검증
+
+- `npm run verify:reentry-db`: **새로 만든 로컬 PostgreSQL DB**에서 이전 스키마의 재출근 실패를 재현한 뒤 마이그레이션, 기존 데이터 보존, 반복 출퇴근, 동시 요청, 미퇴근 유일 제약, 익일 퇴근, 위험한 롤백 거부를 확인합니다. `DATABASE_URL`은 loopback 주소여야 하며 `ALLOW_LOCAL_VERIFY=true DEMO_MODE=false`를 지정해야 합니다. 샘플 직원이 생성되므로 운영 DB에서는 실행할 수 없습니다.
+- `npm run verify:reentry-browser`: 로컬 샘플 서버에서 하루 3회 출퇴근, 재접속, 중복 클릭, 전송 전 오류, 저장 후 응답 유실, 재시도, 이전 퇴근 요청 재전송을 확인합니다. 실제 로컬 PostgreSQL 서버를 대상으로 할 때도 `ALLOW_LOCAL_VERIFY=true`와 loopback `DATABASE_URL`을 명시해야 합니다. 서버와 검증 명령은 같은 테스트 DB를 사용하세요. Playwright·브라우저 경로는 `PLAYWRIGHT_MODULE`, `CHROMIUM_EXECUTABLE`로 지정합니다.
+- `npm run check:schema`: 읽기 전용 검사입니다. 마이그레이션을 대신 실행하지 않습니다. 일반 로컬 빌드(`npm run build`)에는 DB 연결이 필요하지 않습니다.

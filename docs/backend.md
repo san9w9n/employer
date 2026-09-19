@@ -16,7 +16,7 @@ npx tsx scripts/create-owner.ts
 
 The bootstrap refuses to replace an existing owner or run in demo mode. It records a password-free audit. After bootstrap, remove OWNER_PASSWORD from the shell or secret injection context. Create employee accounts in the owner UI. A password reset invalidates the employee's sessions, and deactivation immediately blocks access while preserving history.
 
-`DATABASE_URL` is the runtime pooled PostgreSQL URL. `MIGRATION_DATABASE_URL`, if provided, is used only by migration commands (a direct/session-compatible connection is recommended). `DATABASE_SSL=true` enables certificate verification; set `DATABASE_SSL_CA` to the provider Root CA PEM (newlines or literal `\n` supported). Runtime uses Supabase transaction pooler port 6543; migrations use session pooler port 5432. `APP_ORIGIN` must match the public scheme and host exactly. No migration runs during app startup or API requests.
+`DATABASE_URL` is the runtime pooled PostgreSQL URL. `MIGRATION_DATABASE_URL`, if provided, is used only by migration commands (a direct/session-compatible connection is recommended). `DATABASE_SSL=true` enables certificate verification; set `DATABASE_SSL_CA` to the provider Root CA PEM (newlines or literal `\n` supported). Runtime uses Supabase transaction pooler port 6543; migrations use session pooler port 5432. `APP_ORIGIN` must match the public scheme and host exactly. No migration runs during app startup or API requests. The Vercel build runs a read-only schema check and refuses deployment while checked-in migrations are pending, the obsolete daily attendance constraint remains, or the open-shift unique index is missing.
 
 ## Development seed and public configuration
 
@@ -26,7 +26,7 @@ The bootstrap refuses to replace an existing owner or run in demo mode. It recor
 
 ## Persistence and boundaries
 
-Entity tables use JSONB payloads with generated relational columns, foreign keys, unique day/effective-date indexes and checks maintained by node-pg-migrate. All values are parameter-bound. A small serverless pool (maximum 1 connection per instance) is reused. Each state transaction acquires one connection and a PostgreSQL advisory transaction lock, loads entity state, and saves changed rows plus audits atomically. Retried clock requests use account-scoped idempotency keys. File demo uses an in-process queue and atomic file replacement.
+Entity tables use JSONB payloads with generated relational columns, foreign keys, unique open-shift/effective-date indexes and checks maintained by node-pg-migrate. All values are parameter-bound. A small serverless pool (maximum 1 connection per instance) is reused. Each state transaction acquires one connection and a PostgreSQL advisory transaction lock, loads entity state, and saves changed rows plus audits atomically. Retried clock requests use account-scoped idempotency keys. File demo uses an in-process queue and atomic file replacement.
 
 This deliberately simple repository is suitable for a small single restaurant, but **loads all historical rows, sessions and request records and serializes all requests behind one lock**. Long-running multi-year datasets or larger concurrency will need scoped SQL queries, bounded retention of expired sessions/idempotency records, pagination and narrower employee-level locking. The current in-memory login throttle is per server instance; a multi-instance production environment should add shared rate limiting at the hosting boundary. These are known scaling constraints, not claims of high-volume readiness.
 

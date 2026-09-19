@@ -17,7 +17,11 @@
     "verify:api": "node scripts/api-check.mjs",
     "verify:browser": "node scripts/browser-check.mjs",
     "verify:mobile": "node scripts/mobile-layout-check.mjs",
-    "verify:attendance-management": "node scripts/attendance-management-check.mjs"
+    "verify:attendance-management": "node scripts/attendance-management-check.mjs",
+    "vercel-build": "npm run check:schema && npm run build",
+    "check:schema": "node scripts/check-schema.mjs",
+    "verify:reentry-db": "tsx scripts/reentry-db-check.ts",
+    "verify:reentry-browser": "node scripts/one-button-check.mjs"
   },
   "dependencies": {
     "next": "^15.5.12",

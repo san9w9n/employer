@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useId,useState} from 'react';
 import {minutes, seoulDate} from '@/lib/domain';
 import type {Attendance, Employee} from '@/lib/types';
 
@@ -8,6 +8,7 @@ const localExact=(value:string)=>new Date(Date.parse(value)+9*3600000).toISOStri
 const duration=(value:number)=>`${Math.floor(Math.round(value)/60)}시간 ${Math.round(value)%60}분`;
 
 export function RecordEditor({record,employeeId,employees,busy}:{record?:Attendance;employeeId?:string;employees:Employee[];busy:boolean}) {
+ const reasonLabelId=useId();
  const [clockIn,setClockIn]=useState(record?localTime(record.clockIn):`${seoulDate()}T10:00`);
  const [clockOut,setClockOut]=useState(record?.clockOut?localTime(record.clockOut):'');
  const [deduction,setDeduction]=useState(String(record?.deductionMinutes??120));
@@ -48,7 +49,7 @@ export function RecordEditor({record,employeeId,employees,busy}:{record?:Attenda
    <span>저장 후 계산시간</span><strong>{!clockOut?'미퇴근':invalid?'시간 확인 필요':paid?.calculatedMinutes!=null?duration(paid.calculatedMinutes):'시간을 입력해 주세요'}</strong>
    <p>{!clockOut?'퇴근 기록을 입력하면 계산됩니다.':outMs<inMs?'퇴근이 출근보다 빠릅니다. 새벽 퇴근은 ‘다음 날 퇴근’을 선택해 주세요.':invalid?'휴게·인정시간이 전체 근무시간을 벗어납니다.':complete?`전체 ${duration((outMs-inMs)/60000)} − 차감 ${deduction||0}분 + 인정 ${credited?60:0}분`:''}</p>
   </div>
-  <label className="field"><span>수정 사유</span><textarea name="reason" value={reason} onChange={e=>setReason(e.target.value)} placeholder="직접 입력하거나 아래 사유를 선택하세요" required rows={2}/></label>
+  <label className="field"><span id={reasonLabelId}>수정 사유</span><textarea aria-labelledby={reasonLabelId} name="reason" value={reason} onChange={e=>setReason(e.target.value)} placeholder="직접 입력하거나 아래 사유를 선택하세요" required rows={2}/></label>
   <div className="quick-options" aria-label="수정 사유 빠른 선택">{['출퇴근 시간 정정','퇴근 누락 보정','휴게시간 조정'].map(text=><button type="button" key={text} onClick={()=>setReason(text)}>{text}</button>)}</div>
   <p className="editor-hint">저장하면 확인 전으로 변경되며, 이전 기록과 수정 사유가 조정 내역에 남습니다.</p>
  </fieldset>;

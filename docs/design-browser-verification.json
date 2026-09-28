@@ -1,0 +1,59 @@
+{
+  "environment": "Local demo server; Windows Chromium and WebKit; no physical-device or production-database verification",
+  "mobile": [
+    {
+      "engine": "chromium",
+      "checkedAt": "2026-09-28T01:46:18.552Z",
+      "scenarios": 184,
+      "issueCount": 0,
+      "pageErrors": [],
+      "viewports": [
+        "320x568",
+        "360x780",
+        "375x667",
+        "390x844",
+        "430x932",
+        "667x375",
+        "390x420",
+        "320x320"
+      ]
+    },
+    {
+      "engine": "webkit",
+      "checkedAt": "2026-09-28T01:46:34.292Z",
+      "scenarios": 184,
+      "issueCount": 0,
+      "pageErrors": [],
+      "viewports": [
+        "320x568",
+        "360x780",
+        "375x667",
+        "390x844",
+        "430x932",
+        "667x375",
+        "390x420",
+        "320x320"
+      ]
+    }
+  ],
+  "browser": {
+    "screens": 39,
+    "flows": [
+      {
+        "flow": "owner creates account/wage → employee network failure/retry → clock in/out → owner corrects/credits/confirms → employee sees 11h confirmed",
+        "passed": true
+      }
+    ],
+    "pageErrors": [],
+    "remoteFontRequests": []
+  },
+  "attendanceManagement": {
+    "results": [
+      "owner edit: next-day checkout, break/reason presets, live calculation, original check-in seconds preserved",
+      "all three reset confirmations show scope/counts; cancellation leaves every record unchanged",
+      "stale preview blocked; reconfirmed reset persists deletions/audits and retains records outside range",
+      "empty reset disabled; employee cannot view reset controls or request reset preview"
+    ],
+    "pageErrors": []
+  }
+}

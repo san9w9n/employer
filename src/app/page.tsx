@@ -362,7 +362,7 @@ export default function Home() {
   }, [tab, modal]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
-  }, [tab]);
+  }, [tab, state?.user.id]);
   useEffect(() => {
     void fetch("/api/config")
       .then((r) => (r.ok ? r.json() : null))

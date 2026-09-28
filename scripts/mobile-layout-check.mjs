@@ -66,7 +66,7 @@ try {
       });
       await page.screenshot({ path: `${output}/${prefix}-${screen}.png`, animations: 'disabled' });
       if (focusFields) {
-        const fields = page.locator('[role=dialog] input:not([type=checkbox]),[role=dialog] select,[role=dialog] textarea');
+        const fields = page.locator('[role=dialog] input:not([type=checkbox]):not([type=hidden]):enabled:visible,[role=dialog] select:enabled:visible,[role=dialog] textarea:enabled:visible');
         for (let i = 0; i < await fields.count(); i++) {
           const field = fields.nth(i);
           await field.evaluate(e => { e.focus({ preventScroll: true }); e.scrollIntoView({ block: 'center', inline: 'nearest' }); });
@@ -90,6 +90,7 @@ try {
       await page.getByRole('button', { name: '로그인', exact: true }).click();
       await page.getByRole('button', { name: '로그아웃', exact: true }).waitFor();
       await page.getByRole('heading', { name: username === 'owner' ? '오늘 근무' : '출퇴근', exact: true }).waitFor();
+      await page.waitForFunction(() => window.scrollY === 0);
     }
     async function nav(name) { await page.locator('.mobile-nav').getByRole('button', { name, exact: true }).click(); }
     async function close() { await page.getByRole('button', { name: '닫기', exact: true }).click(); await page.getByRole('dialog').waitFor({ state: 'hidden' }); }
@@ -99,6 +100,13 @@ try {
     await inspect('login');
     await login('owner');
     await inspect('owner-today');
+    await page.getByRole('button', { name: '계정 · 비밀번호 변경', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.getByRole('dialog').waitFor();
+    await inspect('owner-account', true);
+    await page.keyboard.press('Escape');
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    assert.equal(await page.getByRole('button', { name: '계정 · 비밀번호 변경', exact: true }).evaluate(e => e === document.activeElement), true, 'Account dialog restores focus');
     await modal(page.getByRole('button', { name: '근무기록 추가', exact: true }), 'record-create');
     await page.getByLabel('출근 · 한국 시각', { exact: true }).fill('2025-01-02T10:00');
     await page.getByLabel('퇴근 · 미퇴근은 비워 두세요', { exact: true }).fill('2025-01-02T09:00');
@@ -132,6 +140,8 @@ try {
     await page.getByRole('button', { name: '로그인', exact: true }).waitFor();
     await login('employee');
     await inspect('employee-today');
+    await modal(page.getByRole('button', { name: '계정 · 비밀번호 변경', exact: true }), 'employee-account');
+    await close();
     await nav('내 출석부');
     await inspect('employee-attendance');
     await modal(page.getByRole('button', { name: '조정 내역', exact: true }), 'employee-history');

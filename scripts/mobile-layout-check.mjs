@@ -130,6 +130,10 @@ try {
     await close();
     await nav('출석부');
     await inspect('owner-attendance');
+    const available = await (await page.request.get(origin + '/api/state')).json();
+    assert(available.attendance.length, 'Demo must include a record to verify editing');
+    await page.getByLabel('근무일', { exact: true }).fill(available.attendance[0].workDate);
+    await inspect('owner-attendance-records');
     await modal(page.getByRole('button', { name: '기록 수정', exact: true }).first(), 'record-edit');
     await close();
     await modal(page.getByRole('button', { name: '조정 내역', exact: true }), 'owner-history');

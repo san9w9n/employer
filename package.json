@@ -17,6 +17,7 @@
     "verify:api": "node scripts/api-check.mjs",
     "verify:browser": "node scripts/browser-check.mjs",
     "verify:mobile": "node scripts/mobile-layout-check.mjs",
+    "verify:calendar": "node scripts/attendance-calendar-check.mjs",
     "verify:attendance-management": "node scripts/attendance-management-check.mjs",
     "vercel-build": "npm run check:schema && npm run build",
     "check:schema": "node scripts/check-schema.mjs",

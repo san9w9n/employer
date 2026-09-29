@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { RecordEditor } from "@/components/record-editor";
+import { AttendanceCalendar } from "@/components/attendance-calendar";
 import {
   AttendanceResetDialog,
   resetLabels,
@@ -304,7 +305,8 @@ export default function Home() {
     [tab, setTab] = useState("today"),
     [modal, setModal] = useState<Modal>(null),
     [selected, setSelected] = useState(""),
-    [date, setDate] = useState(""),
+    [date, setDate] = useState(today),
+    [calendarMonth, setCalendarMonth] = useState(() => today().slice(0, 7)),
     [search, setSearch] = useState(""),
     [payDate, setPayDate] = useState(today()),
     [sampleLogin, setSampleLogin] = useState(false),
@@ -447,7 +449,7 @@ export default function Home() {
       ) {
         setTab("today");
         setSelected("");
-        setDate("");
+        selectAttendanceDate(today());
         setSearch("");
         setPayDate(today());
         clockRequests.current = {};
@@ -462,6 +464,11 @@ export default function Home() {
         return true;
       }
       const refreshed = await load(endpoint === "login" ? today() : payDate);
+      if (endpoint === "attendance" && tab === "attendance") {
+        const record = body as { clockIn: string; employeeId: string };
+        selectAttendanceDate(localInput(record.clockIn).slice(0, 10));
+        if (selected) setSelected(record.employeeId);
+      }
       if (refreshed) setToast(message);
       else
         setError(
@@ -534,6 +541,19 @@ export default function Home() {
   const completedToday = todayRows.some(
     (r) => r.employeeId === currentEmployee?.id && Boolean(r.clockOut),
   );
+  function selectAttendanceDate(value: string) {
+    const next = value || today();
+    setDate(next);
+    setCalendarMonth(next.slice(0, 7));
+  }
+  const employeeRows = rows.filter((r) => !selected || r.employeeId === selected);
+  const attendanceCounts = new Map<string, number>();
+  for (const row of employeeRows) {
+    attendanceCounts.set(row.workDate, (attendanceCounts.get(row.workDate) || 0) + 1);
+  }
+  const attendanceRows = employeeRows
+    .filter((r) => r.workDate === date)
+    .sort((a, b) => b.clockIn.localeCompare(a.clockIn));
   function recordCard(r: RecordRow) {
     return (
       <article className="record-card" key={r.id}>
@@ -982,7 +1002,11 @@ export default function Home() {
                     </div>
                     <button
                       className="stat attention"
-                      onClick={() => setTab("attendance")}
+                      onClick={() => {
+                        setSelected("");
+                        selectAttendanceDate([...pending].sort((a, b) => b.workDate.localeCompare(a.workDate))[0]?.workDate || today());
+                        setTab("attendance");
+                      }}
                     >
                       <div className="stat-label">
                         확인 필요
@@ -1001,9 +1025,13 @@ export default function Home() {
                       </h2>
                       <button
                         className="text-button"
-                        onClick={() => setTab("attendance")}
+                        onClick={() => {
+                          setSelected("");
+                          selectAttendanceDate(today());
+                          setTab("attendance");
+                        }}
                       >
-                        출석부 전체보기 <Icon name="arrow" size={16} />
+                        오늘 출석부 보기 <Icon name="arrow" size={16} />
                       </button>
                     </div>
                     <div className="team-list">
@@ -1120,7 +1148,7 @@ export default function Home() {
           )}
           {tab === "attendance" && (
             <>
-              <div className="page-heading">
+              <div className="page-heading attendance-page-heading">
                 <div>
                   <h1>{owner ? "출석부" : "내 출석부"}</h1>
                   <p>
@@ -1147,7 +1175,7 @@ export default function Home() {
                   )}
                 </div>
               </div>
-              <div className="filters">
+              <div className="filters attendance-filters">
                 {owner && (
                   <Field label="직원">
                     <select
@@ -1167,49 +1195,36 @@ export default function Home() {
                   <input
                     type="date"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => selectAttendanceDate(e.target.value)}
                   />
                 </Field>
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    setDate("");
-                    setSelected("");
-                  }}
-                >
-                  필터 초기화
-                </button>
-                <span className="filter-count">
-                  총{" "}
-                  {
-                    rows.filter(
-                      (r) =>
-                        (!selected || r.employeeId === selected) &&
-                        (!date || r.workDate === date),
-                    ).length
-                  }
-                  건
-                </span>
               </div>
-              <div className="record-grid">
-                {rows
-                  .filter(
-                    (r) =>
-                      (!selected || r.employeeId === selected) &&
-                      (!date || r.workDate === date),
-                  )
-                  .sort((a, b) => b.clockIn.localeCompare(a.clockIn))
-                  .map(recordCard)}
+              <AttendanceCalendar
+                value={date}
+                month={calendarMonth}
+                today={today()}
+                counts={attendanceCounts}
+                onChange={selectAttendanceDate}
+                onMonthChange={setCalendarMonth}
+              />
+              <div className="attendance-list-heading">
+                <div aria-live="polite" aria-atomic="true">
+                  <h2>{new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`))}{date === today() && <span className="attendance-today-label">오늘</span>}</h2>
+                  <span>{date.slice(0, 4)}년 · 근무기록 {attendanceRows.length}건</span>
+                </div>
+                <button className="text-button" onClick={() => {
+                  selectAttendanceDate(today());
+                  setSelected("");
+                }}>필터 초기화</button>
               </div>
-              {!rows.filter(
-                (r) =>
-                  (!selected || r.employeeId === selected) &&
-                  (!date || r.workDate === date),
-              ).length && (
+              <div className="record-grid attendance-records" aria-label="선택한 날짜의 근무기록">
+                {attendanceRows.map(recordCard)}
+              </div>
+              {!attendanceRows.length && (
                 <div className="empty">
                   <Icon name="attendance" size={30} />
                   <h3>근무기록이 없습니다</h3>
-                  <p>조회 조건을 변경해 주세요.</p>
+                  <p>선택한 날짜에 기록이 없습니다. 다른 날짜를 선택해 주세요.</p>
                 </div>
               )}
               {owner && (
@@ -1636,6 +1651,7 @@ export default function Home() {
                   <RecordEditor
                     record={modal.record}
                     employeeId={modal.employee?.id || selected}
+                    workDate={tab === "attendance" ? date : undefined}
                     employees={employees}
                     busy={busy}
                   />

@@ -7,9 +7,9 @@ const localTime=(value:string)=>new Date(Date.parse(value)+9*3600000).toISOStrin
 const localExact=(value:string)=>new Date(Date.parse(value)+9*3600000).toISOString().slice(0,-1);
 const duration=(value:number)=>`${Math.floor(Math.round(value)/60)}시간 ${Math.round(value)%60}분`;
 
-export function RecordEditor({record,employeeId,employees,busy}:{record?:Attendance;employeeId?:string;employees:Employee[];busy:boolean}) {
+export function RecordEditor({record,employeeId,workDate,employees,busy}:{record?:Attendance;employeeId?:string;workDate?:string;employees:Employee[];busy:boolean}) {
  const reasonLabelId=useId();
- const [clockIn,setClockIn]=useState(record?localTime(record.clockIn):`${seoulDate()}T10:00`);
+ const [clockIn,setClockIn]=useState(record?localTime(record.clockIn):`${workDate||seoulDate()}T10:00`);
  const [clockOut,setClockOut]=useState(record?.clockOut?localTime(record.clockOut):'');
  const [deduction,setDeduction]=useState(String(record?.deductionMinutes??120));
  const [credited,setCredited]=useState(record?.credited??false);

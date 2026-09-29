@@ -22,6 +22,7 @@ try{
  await api('attendance',{employeeId:e.id,clockIn:date+'T10:00:12.345+09:00',clockOut:date+'T22:00:23.456+09:00',deductionMinutes:120,credited:false,reason:'수정 전 기록'});
  await page.reload();await page.locator('.mobile-nav').getByText('출석부',{exact:true}).click();
  await page.locator('.filters select').selectOption(e.id);
+ await page.getByLabel('근무일',{exact:true}).fill(date);
  await page.getByRole('button',{name:'기록 수정',exact:true}).click();
  let dialog=page.getByRole('dialog');await dialog.waitFor();
  assert.equal(await dialog.getByLabel('직원',{exact:true}).isDisabled(),true);

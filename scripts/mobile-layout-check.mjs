@@ -135,6 +135,9 @@ try {
     await page.getByLabel('근무일', { exact: true }).fill(available.attendance[0].workDate);
     await inspect('owner-attendance-records');
     await modal(page.getByRole('button', { name: '기록 수정', exact: true }).first(), 'record-edit');
+    await page.getByRole('button', { name: '이 근무기록 삭제', exact: true }).click();
+    await page.getByRole('dialog').locator('.reset-summary').waitFor();
+    await inspect('record-delete', true);
     await close();
     await modal(page.getByRole('button', { name: '조정 내역', exact: true }), 'owner-history');
     if (await page.locator('summary').count()) { await page.locator('summary').first().click(); await inspect('owner-history-expanded'); }

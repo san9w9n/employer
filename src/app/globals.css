@@ -2019,3 +2019,16 @@ dd {
   .attendance-list-heading > div { display: block; }
   .attendance-list-heading h2 { font-size: 17px; }
 }
+.record-delete-link { color: #a33e35; border-top: 1px solid var(--border); border-radius: 0; width: 100%; margin-top: 12px; }
+.attendance-list-heading > .attendance-list-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px 8px; flex-wrap: wrap; }
+.attendance-list-actions .secondary { font-size: 12px; padding: 8px 10px; }
+@media (max-width: 600px) {
+  .attendance-list-heading:has(.attendance-list-actions .secondary) { grid-template-columns: minmax(0, 1fr); }
+  .attendance-list-heading > .attendance-list-actions { justify-content: space-between; }
+}
+html.pull-refresh-enabled, html.pull-refresh-enabled body { overscroll-behavior-y: contain; }
+.pull-refresh { overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--green); font-size: 13px; }
+.pull-refresh > span { display: inline-flex; align-items: center; gap: 8px; }
+.refresh-spinner { display: inline-block; animation: refresh-spin 1s linear infinite; }
+@keyframes refresh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .refresh-spinner { animation: none; } }

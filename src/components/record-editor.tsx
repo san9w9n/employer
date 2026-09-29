@@ -7,7 +7,7 @@ const localTime=(value:string)=>new Date(Date.parse(value)+9*3600000).toISOStrin
 const localExact=(value:string)=>new Date(Date.parse(value)+9*3600000).toISOString().slice(0,-1);
 const duration=(value:number)=>`${Math.floor(Math.round(value)/60)}시간 ${Math.round(value)%60}분`;
 
-export function RecordEditor({record,employeeId,workDate,employees,busy}:{record?:Attendance;employeeId?:string;workDate?:string;employees:Employee[];busy:boolean}) {
+export function RecordEditor({record,employeeId,workDate,employees,busy,onDelete}:{record?:Attendance;employeeId?:string;workDate?:string;employees:Employee[];busy:boolean;onDelete?:()=>void}) {
  const reasonLabelId=useId();
  const [clockIn,setClockIn]=useState(record?localTime(record.clockIn):`${workDate||seoulDate()}T10:00`);
  const [clockOut,setClockOut]=useState(record?.clockOut?localTime(record.clockOut):'');
@@ -52,5 +52,6 @@ export function RecordEditor({record,employeeId,workDate,employees,busy}:{record
   <label className="field"><span id={reasonLabelId}>수정 사유</span><textarea aria-labelledby={reasonLabelId} name="reason" value={reason} onChange={e=>setReason(e.target.value)} placeholder="직접 입력하거나 아래 사유를 선택하세요" required rows={2}/></label>
   <div className="quick-options" aria-label="수정 사유 빠른 선택">{['출퇴근 시간 정정','퇴근 누락 보정','휴게시간 조정'].map(text=><button type="button" key={text} onClick={()=>setReason(text)}>{text}</button>)}</div>
   <p className="editor-hint">저장하면 확인 전으로 변경되며, 이전 기록과 수정 사유가 조정 내역에 남습니다.</p>
+  {record&&onDelete&&<button type="button" className="record-delete-link" onClick={onDelete}>이 근무기록 삭제</button>}
  </fieldset>;
 }

@@ -33,6 +33,24 @@ export function mutate(s:Store,user:Account,endpoint:string,b:Record<string,unkn
   const current=str(b.currentPassword,'현재 비밀번호');assert(verifyPassword(current,user.passwordHash),'현재 비밀번호가 맞지 않습니다.',403);const password=str(b.newPassword,'새 비밀번호');assert(password.length>=8,'비밀번호는 8자 이상이어야 합니다.');user.passwordHash=hashPassword(password);s.sessions=s.sessions.filter(x=>x.accountId!==user.id);audit(s,user,user.id,user.employeeId,null,{passwordChanged:true},'비밀번호 변경');return {ok:true};
  }
  owner(user);
+ if(endpoint==='attendance-delete-preview'||endpoint==='attendance-delete'){
+  const id=str(b.id,'기록 번호');
+  let requestId='';
+  if(endpoint==='attendance-delete'){
+   assert(b.confirmed===true,'삭제할 근무기록을 먼저 확인해 주세요.');
+   requestId=tokenHash(`${user.id}:${str(b.requestId,'요청 번호',100)}`);
+   const prior=s.requests.find(r=>r.id===requestId);
+   if(prior){assert(prior.action==='attendance-delete'&&(prior.result as {deletedId?:string}).deletedId===id,'다른 동작에 사용된 요청 번호입니다.',409);return prior.result;}
+  }
+  const record=s.attendance.find(a=>a.id===id);assert(record,'기록을 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.',404);
+  const token=tokenHash(JSON.stringify(Object.fromEntries(Object.entries(record).sort(([a],[b])=>a.localeCompare(b)))));
+  if(endpoint==='attendance-delete-preview')return {record:structuredClone(record),employeeName:employee(s,record.employeeId).name,token};
+  assert(str(b.token,'확인 정보',64)===token,'근무기록이 변경되었습니다. 삭제 대상을 다시 확인해 주세요.',409);
+  const reason=str(b.reason,'삭제 사유',500);
+  audit(s,user,record.id,record.employeeId,record,null,`근무기록 삭제 · ${reason}`);
+  s.attendance=s.attendance.filter(a=>a.id!==id);
+  const result={ok:true,deletedId:id};s.requests.push({id:requestId,accountId:user.id,action:'attendance-delete',result});return result;
+ }
  if(endpoint==='attendance-reset-preview'||endpoint==='attendance-reset'){
   const scope=b.scope;assert(scope==='today'||scope==='week'||scope==='month','초기화 기간을 확인해 주세요.');
   if(endpoint==='attendance-reset-preview')return resetPreview(s,scope);

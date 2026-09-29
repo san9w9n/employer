@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { RecordEditor } from "@/components/record-editor";
 import { AttendanceCalendar } from "@/components/attendance-calendar";
+import { AttendanceDeleteDialog } from "@/components/attendance-delete-dialog";
+import { PullToRefresh } from "@/components/pull-to-refresh";
 import {
   AttendanceResetDialog,
   resetLabels,
@@ -96,6 +98,7 @@ type Modal = {
     | "period"
     | "password"
     | "history"
+    | "delete"
     | "reset";
   resetScope?: ResetScope;
   record?: RecordRow;
@@ -897,6 +900,8 @@ export default function Home() {
           </div>
         </header>
         <main id="main-content" className="content" tabIndex={-1}>
+          <PullToRefresh key={tab} enabled={tab === "today" || tab === "attendance"}
+            blocked={busy || loading || Boolean(modal)} onRefresh={() => load()} />
           {error && (
             <div className="error global-error" role="alert">
               <Icon name="info" />
@@ -1212,10 +1217,13 @@ export default function Home() {
                   <h2>{new Intl.DateTimeFormat("ko-KR", { month: "long", day: "numeric", weekday: "short", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`))}{date === today() && <span className="attendance-today-label">오늘</span>}</h2>
                   <span>{date.slice(0, 4)}년 · 근무기록 {attendanceRows.length}건</span>
                 </div>
+                <div className="attendance-list-actions">
+                {owner && <button className="secondary" onClick={() => setModal({ kind: "record" })}>선택한 날짜에 추가</button>}
                 <button className="text-button" onClick={() => {
                   selectAttendanceDate(today());
                   setSelected("");
                 }}>필터 초기화</button>
+                </div>
               </div>
               <div className="record-grid attendance-records" aria-label="선택한 날짜의 근무기록">
                 {attendanceRows.map(recordCard)}
@@ -1589,7 +1597,17 @@ export default function Home() {
           }}
         />
       )}
-      {modal && modal.kind !== "reset" && (
+      {modal?.kind === "delete" && modal.record && (
+        <AttendanceDeleteDialog id={modal.record.id} busy={busy} onBusy={setBusy}
+          onClose={() => setModal(null)} onComplete={() => {
+            setModal(null);
+            void load().then(ok => {
+              if (ok) setToast("근무기록 1건을 삭제했습니다.");
+              else setError("삭제됐지만 최신 기록을 불러오지 못했습니다. 다시 불러오기를 눌러 주세요.");
+            });
+          }} />
+      )}
+      {modal && modal.kind !== "reset" && modal.kind !== "delete" && (
         <div
           className="modal-backdrop"
           onClick={(e) => {
@@ -1608,7 +1626,7 @@ export default function Home() {
                 <span className="eyebrow">
                   {modal.record
                     ? name(modal.record.employeeId)
-                    : modal.employee?.name || "오늘근무"}
+                    : modal.kind === "record" && tab === "attendance" ? `${date} · 수동 추가` : modal.employee?.name || "오늘근무"}
                 </span>
                 <h2 id="modal-title">
                   {
@@ -1654,6 +1672,7 @@ export default function Home() {
                     workDate={tab === "attendance" ? date : undefined}
                     employees={employees}
                     busy={busy}
+                    onDelete={modal.record ? () => setModal({ kind: "delete", record: modal.record }) : undefined}
                   />
                 )}
                 {modal.kind === "employee" && (

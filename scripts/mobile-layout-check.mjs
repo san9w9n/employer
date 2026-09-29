@@ -40,6 +40,19 @@ try {
     async function inspect(screen, focusFields = false) {
       await page.mouse.move(0, 0);
       await page.getByRole('status').waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {});
+      if (await page.locator('.topbar').count() && !await page.getByRole('dialog').count()) {
+        const header = await page.evaluate(() => {
+          window.scrollTo(0, 240);
+          const bar = document.querySelector('.topbar');
+          const rect = bar.getBoundingClientRect();
+          const result = { top: rect.top, position: getComputedStyle(bar).position, visible: bar.contains(document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2)) };
+          window.scrollTo(0, 0);
+          return result;
+        });
+        assert.equal(header.position, 'sticky', `${screen}: sticky header`);
+        assert(Math.abs(header.top) < 1, `${screen}: header stays at top after scroll`);
+        assert.equal(header.visible, true, `${screen}: content does not cover header`);
+      }
       const issues = await page.evaluate(() => {
         const found = [];
         const visible = e => { const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
@@ -144,6 +157,10 @@ try {
     await close();
     await nav('내 출석부');
     await inspect('employee-attendance');
+    await page.getByLabel('근무일', { exact: true }).fill('2026-09-29');
+    await inspect('employee-attendance-date');
+    assert.equal(await page.getByLabel('근무일', { exact: true }).inputValue(), '2026-09-29');
+    await page.getByLabel('근무일', { exact: true }).fill('');
     await modal(page.getByRole('button', { name: '조정 내역', exact: true }), 'employee-history');
     if (await page.locator('summary').count()) { await page.locator('summary').first().click(); await inspect('employee-history-expanded'); }
     await close();

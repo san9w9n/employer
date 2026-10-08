@@ -88,6 +88,7 @@ type State = {
     after?: unknown;
   }[];
   payroll?: Pay[];
+  store?: { id: string; name: string };
   demo?: boolean;
 };
 type Modal = {
@@ -571,6 +572,7 @@ export default function Home() {
         ["profile", "내 정보"],
       ];
   const active = employees.filter((e) => e.active);
+  const storeLabel = state?.store?.name || "매장";
   const todayLabel = new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
     month: "long",
@@ -865,9 +867,9 @@ export default function Home() {
           오늘근무
         </Link>
         <div className="store-label">
-          <span className="store-icon">온</span>
+          <span className="store-icon">{storeLabel.slice(0, 1)}</span>
           <div>
-            <b>온기 식당</b>
+            <b>{storeLabel}</b>
             <span className="store-role">
               {owner ? "사장님 작업 공간" : "직원 작업 공간"}
             </span>
@@ -910,7 +912,7 @@ export default function Home() {
       <div className="workspace">
         <header className="topbar">
           <div className="breadcrumb">
-            온기 식당 <span>/</span> <b>{nav.find((x) => x[0] === tab)?.[1]}</b>
+            {storeLabel} <span>/</span> <b>{nav.find((x) => x[0] === tab)?.[1]}</b>
           </div>
           <div className="top-actions">
             <span className="demo-pill">

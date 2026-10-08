@@ -53,7 +53,9 @@ ALLOW_SAMPLE_SEED=true node --env-file=.env.local --import tsx scripts/seed.ts
 # 셸에 DB 환경변수가 있다면 ALLOW_SAMPLE_SEED=true npm run db:seed
 ```
 
-운영 사장님 생성: `DATABASE_URL`, `OWNER_USERNAME`, `OWNER_PASSWORD`(12자 이상), 선택적으로 `OWNER_NAME`을 안전한 셸 환경에 제공하고 `npm run db:owner`를 실행합니다. 이미 사장님이 있으면 덮어쓰지 않습니다. 이후 직원 계정·시급·산정기간은 사장님 화면에서 관리합니다.
+매장 사장님 생성: `DATABASE_URL`, `OWNER_STORE_NAME`(매장 이름), `OWNER_USERNAME`, `OWNER_PASSWORD`(12자 이상), 선택적으로 `OWNER_NAME`을 안전한 셸 환경에 제공하고 `npm run db:owner`를 실행합니다. 실행할 때마다 새 매장이 하나 생기며, 같은 매장 이름이나 이미 쓰는 아이디는 거부합니다. 이후 직원 계정·시급·산정기간은 각 사장님 화면에서 관리합니다.
+
+여러 매장: 사장님은 자기 매장의 직원·근무기록·시급·산정기간·급여·조정 내역만 보고 바꿀 수 있습니다. 직원은 등록한 사장님의 매장에 속합니다. 매장 정보는 기존 JSONB 행의 `storeId`로 구분하므로 DB 마이그레이션이 필요 없습니다. `storeId`가 없는 기존 데이터는 원래 매장(온기 식당)에 속합니다. 로그인 아이디는 모든 매장에서 겹칠 수 없습니다.
 
 ## 기능과 계산 규칙
 

@@ -235,6 +235,39 @@ function Badge({
     </span>
   );
 }
+function Seal({ record, fresh }: { record: RecordRow; fresh?: boolean }) {
+  if (!record.clockOut) return <span className="seal working">근무 중</span>;
+  return record.confirmed ? (
+    <span className={`seal stamped${fresh ? " fresh" : ""}`}>
+      확인<span className="sr-only"> 완료</span>
+    </span>
+  ) : (
+    <span className="seal pending">확인 전</span>
+  );
+}
+function BrandSeal({ size = "md" }: { size?: "md" | "lg" }) {
+  return (
+    <span className={`brand-mark ${size}`} aria-hidden="true">
+      근
+    </span>
+  );
+}
+function useSeoulClock() {
+  const read = () =>
+    new Intl.DateTimeFormat("ko-KR", {
+      timeZone: "Asia/Seoul",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date());
+  const [now, setNow] = useState("");
+  useEffect(() => {
+    setNow(read());
+    const t = setInterval(() => setNow(read()), 15000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
 function Field({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
   return (
@@ -319,6 +352,8 @@ export default function Home() {
       message: string;
     } | null>(null);
   const clockRequests = useRef<Partial<Record<"in" | "out", string>>>({});
+  const [stamped, setStamped] = useState<string | null>(null);
+  const clockNow = useSeoulClock();
   const clockBusy = useRef(false);
   const owner = state?.user.role === "owner";
   const employees = state?.employees || [];
@@ -365,6 +400,7 @@ export default function Home() {
     setError("");
     setPendingMutation(null);
   }, [tab, modal]);
+  useEffect(() => setStamped(null), [tab]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [tab, state?.user.id]);
@@ -535,6 +571,12 @@ export default function Home() {
         ["profile", "내 정보"],
       ];
   const active = employees.filter((e) => e.active);
+  const todayLabel = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+  }).format(new Date());
   const todayRows = rows.filter((r) => r.workDate === today());
   const working = rows.filter((r) => !r.clockOut);
   const pending = rows.filter((r) => !r.confirmed);
@@ -574,9 +616,7 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <Badge tone={!r.clockOut ? "orange" : r.confirmed ? "green" : "gray"}>
-            {!r.clockOut ? "근무 중" : r.confirmed ? "확인 완료" : "확인 전"}
-          </Badge>
+          <Seal record={r} fresh={stamped === r.id} />
         </div>
         <div className="time-grid">
           <div>
@@ -646,17 +686,20 @@ export default function Home() {
               <button
                 disabled={busy}
                 className="confirm"
-                onClick={() =>
-                  mutate(
-                    "attendance",
-                    {
-                      ...r,
-                      confirmed: true,
-                      reason: r.reason || "근무기록 확인",
-                    },
-                    "확인 완료했습니다.",
+                onClick={async () => {
+                  if (
+                    await mutate(
+                      "attendance",
+                      {
+                        ...r,
+                        confirmed: true,
+                        reason: r.reason || "근무기록 확인",
+                      },
+                      "확인 완료했습니다.",
+                    )
                   )
-                }
+                    setStamped(r.id);
+                }}
               >
                 <Icon name="check" size={16} />
                 확인
@@ -708,9 +751,7 @@ export default function Home() {
   if (loading && !state)
     return (
       <div className="loading-screen" role="status" aria-live="polite">
-        <div className="brand-mark">
-          <Icon name="check" size={30} />
-        </div>
+        <BrandSeal size="lg" />
         <h2>오늘근무</h2>
         <p>불러오는 중…</p>
         <span className="loader" />
@@ -722,15 +763,12 @@ export default function Home() {
         <section className="login-panel">
           <div className="login-form">
             <div className="brand">
-              <div className="brand-mark">
-                <Icon name="check" size={26} />
-              </div>
+              <BrandSeal />
               오늘근무
             </div>
             <div className="login-heading">
-              <span className="eyebrow">우리 매장의 하루를 함께</span>
               <h1>로그인</h1>
-              <p>출퇴근부터 급여 관리까지, 오늘근무에서.</p>
+              <p>사장님께 받은 아이디로 출퇴근을 기록하세요.</p>
             </div>
             <form
               onSubmit={(e) => {
@@ -810,7 +848,7 @@ export default function Home() {
               </div>
             )}
             <p className="login-help">
-              <Icon name="info" size={15} /> 계정 문의 · 사장님
+              <Icon name="info" size={15} /> 계정 문의는 사장님께 해 주세요.
             </p>
           </div>
         </section>
@@ -823,11 +861,8 @@ export default function Home() {
       </a>
       <aside className="sidebar">
         <Link className="brand" href="/">
-          <div className="brand-mark">
-            <Icon name="check" size={26} />
-          </div>
+          <BrandSeal />
           오늘근무
-          <span className="brand-dot" />
         </Link>
         <div className="store-label">
           <span className="store-icon">온</span>
@@ -913,22 +948,11 @@ export default function Home() {
           )}
           {tab === "today" && (
             <>
-              <div className="page-heading">
+              <div className={`page-heading${owner ? "" : " compact-heading"}`}>
                 <div>
-                  <div className="eyebrow">
-                    {new Intl.DateTimeFormat("ko-KR", {
-                      timeZone: "Asia/Seoul",
-                      month: "long",
-                      day: "numeric",
-                      weekday: "long",
-                    }).format(new Date())}
-                  </div>
+                  {owner && <div className="eyebrow">{todayLabel}</div>}
                   <h1>{owner ? "오늘 근무" : "출퇴근"}</h1>
-                  <p>
-                    {owner
-                      ? "직원들의 하루를 한눈에 확인하세요."
-                      : "오늘도 반가워요. 출퇴근을 간편하게 기록하세요."}
-                  </p>
+                  {owner && <p>출근 현황과 확인할 기록을 먼저 보여 드려요.</p>}
                 </div>
                 {owner && (
                   <button
@@ -941,13 +965,22 @@ export default function Home() {
                 )}
               </div>
               {!owner && (
-                <section className="hero clock-panel">
+                <section
+                  className={`hero clock-panel${isWorking ? " is-working" : ""}`}
+                  aria-label="출퇴근 기록"
+                >
+                  <div className="clock-face">
+                    <span className="clock-date">{todayLabel}</span>
+                    <time className="clock-now" aria-label={`현재 시각 ${clockNow}`}>
+                      {clockNow || "--:--"}
+                    </time>
+                  </div>
                   <div className="clock-status">
                     <span className="hero-tag">
                       <span
                         className={`live-dot${isWorking ? " is-working" : ""}`}
                       />
-                      {currentEmployee?.name} · 오늘 근무
+                      {currentEmployee?.name}
                     </span>
                     <h2>
                       {isWorking
@@ -958,15 +991,15 @@ export default function Home() {
                     </h2>
                     <p>
                       {isWorking
-                        ? `출근 ${time(working.find((r) => r.employeeId === currentEmployee?.id)?.clockIn)} · 퇴근할 때 아래 버튼을 눌러 주세요.`
+                        ? `${time(working.find((r) => r.employeeId === currentEmployee?.id)?.clockIn)}에 출근했어요. 일을 마치면 퇴근을 눌러 주세요.`
                         : completedToday
-                          ? "수고하셨어요. 다시 근무하면 출근을 기록해 주세요."
-                          : "근무를 시작할 준비가 되면 출근을 기록해 주세요."}
+                          ? "오늘 근무를 마쳤어요. 다시 일하게 되면 출근을 눌러 주세요."
+                          : "매장에 도착하면 출근을 눌러 주세요."}
                     </p>
                   </div>
                   <div className="clock-buttons">
                     <button
-                      className="light-button"
+                      className={`punch-button ${isWorking ? "out" : "in"}`}
                       disabled={busy || loading}
                       aria-busy={busy}
                       onClick={() => recordClock(isWorking ? "out" : "in")}
@@ -989,7 +1022,6 @@ export default function Home() {
                     <div className="stat">
                       <div className="stat-label">
                         오늘 출근
-                        <Icon name="employees" />
                       </div>
                       <p>
                         {new Set(todayRows.map((r) => r.employeeId)).size}
@@ -998,7 +1030,7 @@ export default function Home() {
                     </div>
                     <div className="stat working-stat">
                       <div className="stat-label">
-                        근무 중<Icon name="clock" />
+                        근무 중
                       </div>
                       <p>
                         {working.length}
@@ -1015,7 +1047,7 @@ export default function Home() {
                     >
                       <div className="stat-label">
                         확인 필요
-                        <Icon name="attendance" />
+                        <Icon name="arrow" size={16} />
                       </div>
                       <p>
                         {pending.length}
